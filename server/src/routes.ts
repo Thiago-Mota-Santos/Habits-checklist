@@ -83,6 +83,41 @@ export async function appRoutes(app: FastifyInstance){
         }
     })
 
+    app.delete('/habits/:id/delete', async(request) => {
+        const toggleHabitsParams = z.object({
+            id: z.string().uuid(),
+        })
+
+        const { id } = toggleHabitsParams.parse(request.params);
+        const today = dayjs().startOf('day').toDate();
+
+
+
+        let day = await prisma.day.findUnique({
+            where: {
+              date: today,
+            },
+          });
+        
+          if (day) {
+            await prisma.dayHabit.deleteMany({
+              where: {
+                habit_id: id,
+              },
+            });
+        
+            await prisma.habitWeekDays.deleteMany({
+              where: {
+                habit_id: id,
+              },
+            });
+        
+         
+}
+
+    })
+    
+
     app.patch('/habits/:id/toggle', async (request) => {
         const toogleHabitsParams = z.object({
             id: z.string().uuid()
@@ -112,9 +147,10 @@ export async function appRoutes(app: FastifyInstance){
                 habit_id: id
                }
             }
-
-           
         })
+
+        
+
 
             if(dayHabit){
                 await prisma.dayHabit.delete({
@@ -122,7 +158,7 @@ export async function appRoutes(app: FastifyInstance){
                         id: dayHabit.id
                     }
                 })
-            }else{
+               }else{
                 await prisma.dayHabit.create({
                     data:{
                         day_id: day.id,
@@ -131,8 +167,8 @@ export async function appRoutes(app: FastifyInstance){
                     }
                     
                 })
-            }      
-
+            }  
+    
     })
 
 

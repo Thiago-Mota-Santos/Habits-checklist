@@ -1,15 +1,16 @@
 import { useRoute } from "@react-navigation/native";
-import { ScrollView, View, Text, Alert } from "react-native";
+import { ScrollView, View, Text } from "react-native";
 import dayjs from "dayjs";
 import { BackButton } from "../components/BackButton";
 import { ProgressBar } from "../components/ProgressBar";
-import { CheckBox } from "../components/CheckBox";
+import { CheckBox, checkProps } from "../components/CheckBox";
 import { HabitEmpty } from "../components/HabitEmpty";
 import { useEffect, useState } from "react";
 import { Loading } from "../components/Loading";
 import { api } from "../lib/axios";
 import { generateProgressPorcentage } from "../utils/generateProgressPorcentage";
 import clsx from "clsx";
+import { HoldItem } from "react-native-hold-menu";
 
 interface Params {
   date: string;
@@ -25,7 +26,8 @@ interface habitDayProps {
 
 export function Habit() {
   const [loading, setLoading] = useState(true);
-  const [dayHabit, setDayHabit] = useState<habitDayProps | null>(null);
+  const [dayHabit, setDayHabit] = useState<habitDayProps>();
+  const [newPossibleHabits, setNewPossiblehabits] = useState<string[]>();
 
   const route = useRoute();
   const { date } = route.params as Params;
@@ -42,22 +44,47 @@ export function Habit() {
       )
     : 0;
 
-  async function handleToggleHabits(habitId: string) {
-    await api.patch(`habits/${habitId}/toggle`);
-    const isAlreadyCompleted = dayHabit?.completedHabits.includes(habitId);
+  async function handleRemoveHabits(habitId: string) {
+    try {
+      await api.delete(`habits/${habitId}/delete`);
+      console.log(dayHabit?.possibleHabits);
 
-    let completedHabits: string[] = [];
-    if (isAlreadyCompleted) {
-      completedHabits = dayHabit!.completedHabits.filter(
-        (id) => id !== habitId
-      );
-    } else {
-      completedHabits = [...dayHabit!.completedHabits, habitId];
+      setDayHabit((prev) => {
+        if (!prev) {
+          return;
+        }
+        const newHabits = JSON.parse(JSON.stringify(prev.possibleHabits));
+        return {
+          possibleHabits: newHabits.filter(
+            (habit: { id: string }) => habit.id !== habitId
+          ),
+          completedHabits: prev.completedHabits,
+        };
+      });
+    } catch (error) {
+      console.error(error);
     }
-    setDayHabit({
-      possibleHabits: dayHabit!.possibleHabits,
-      completedHabits,
-    });
+  }
+  async function handleToggleHabits(habitId: string) {
+    try {
+      await api.patch(`habits/${habitId}/toggle`);
+      const isAlreadyCompleted = dayHabit?.completedHabits.includes(habitId);
+
+      let completedHabits: string[] = [];
+      if (isAlreadyCompleted) {
+        completedHabits = dayHabit!.completedHabits.filter(
+          (id) => id !== habitId
+        );
+      } else {
+        completedHabits = [...dayHabit!.completedHabits, habitId];
+      }
+      setDayHabit({
+        possibleHabits: dayHabit!.possibleHabits,
+        completedHabits,
+      });
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   useEffect(() => {
@@ -89,6 +116,7 @@ export function Habit() {
         </Text>
         <Text className=" text-white font-extrabol text-3xl">{dayOfMonth}</Text>
         <ProgressBar progress={habitsProgress} />
+
         <View
           className={clsx("mt-6", {
             ["opacity-50"]:
@@ -106,6 +134,7 @@ export function Habit() {
                   checked={dayHabit.completedHabits.includes(habit.id)}
                   onPress={() => handleToggleHabits(habit.id)}
                   disabled={isDateInPast}
+                  onRemove={() => handleRemoveHabits(habit.id)}
                 />
               );
             })

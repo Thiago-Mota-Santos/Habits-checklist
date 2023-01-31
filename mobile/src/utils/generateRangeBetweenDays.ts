@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 
-export function generateRangeBetweenDays (){
+export function generateRangeBetweenDays() {
     const firstDayOfTheYear = dayjs().startOf('year');
     const today = new Date();
 
@@ -8,7 +8,8 @@ export function generateRangeBetweenDays (){
     let compareData = firstDayOfTheYear
 
 
-    while(compareData.isBefore(today)){
+
+    while (compareData.isBefore(today)) {
         dates.push(compareData.toDate())
         compareData = compareData.add(1, 'day')
     }

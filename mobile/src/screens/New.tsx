@@ -89,6 +89,8 @@ export function New() {
             title={weekday}
             checked={weekDays.includes(index)}
             onPress={() => handleToogleClick(index)}
+            screen={false}
+            onRemove={() => ""}
           />
         ))}
         <TouchableOpacity
